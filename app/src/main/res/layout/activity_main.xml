@@ -59,14 +59,14 @@
         android:layout_marginEnd="16dp"
         android:onClick="enableBluetooth"
         android:text="@string/button_enable_bt"
-        app:layout_constraintBottom_toTopOf="@+id/button2"
-        app:layout_constraintEnd_toStartOf="@+id/buttonConnect"
+        app:layout_constraintBottom_toTopOf="@+id/buttonConnect"
+        app:layout_constraintEnd_toStartOf="@+id/buttonPrintDeviceList"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/buttonConnect"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -86,11 +86,11 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:text="@string/button_help"
-        app:layout_constraintBottom_toBottomOf="@+id/button2"
+        app:layout_constraintBottom_toBottomOf="@+id/buttonConnect"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/button2"
-        app:layout_constraintTop_toTopOf="@+id/button2" />
+        app:layout_constraintStart_toEndOf="@+id/buttonConnect"
+        app:layout_constraintTop_toTopOf="@+id/buttonConnect" />
 
     <TextView
         android:id="@+id/textView2"
@@ -108,7 +108,7 @@
         app:layout_constraintTop_toBottomOf="@+id/editTextDeviceAddr" />
 
     <Button
-        android:id="@+id/buttonConnect"
+        android:id="@+id/buttonPrintDeviceList"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"

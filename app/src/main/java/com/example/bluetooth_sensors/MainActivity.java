@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 public class MainActivity extends AppCompatActivity
         implements PrintDeviceListDialogFragment.PrintDeviceListDialogListener {
 
+    public static final String LOG_TAG = "BT_SENSORS";
+    public static final String INTENT_EXTRA = "devices";
+    public static final BluetoothAdapter bluetoothAdapter= BluetoothAdapter.getDefaultAdapter();
+
     private static final int REQUEST_ENABLE_BT = 5;
     private static final String DEVICE_LIST_FILE = "sensor_devices.txt";
 
@@ -34,6 +38,9 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (bluetoothAdapter.isEnabled()) {
+            findViewById(R.id.buttonConnect).setEnabled(true);
+        }
 
     }
 
@@ -61,9 +68,7 @@ public class MainActivity extends AppCompatActivity
      * @param view
      */
     public void enableBluetooth(View view) {
-        BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
-
-        if (bt.isEnabled()) {
+        if (bluetoothAdapter.isEnabled()) {
             Toast.makeText(MainActivity.this, "Bluetooth already on.", Toast.LENGTH_SHORT).show();
         } else {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
@@ -80,8 +85,15 @@ public class MainActivity extends AppCompatActivity
      * @param view
      */
     public void connectToDevices(View view) {
-        Intent intent = new Intent(this, DataTransferActivity.class);
-        startActivity(intent);
+        if (bluetoothAdapter.isEnabled()) {
+            Intent intent = new Intent(this, DataTransferActivity.class);
+            // I can add key-value data to intents?
+            intent.putExtra(INTENT_EXTRA, getDeviceList());
+            startActivity(intent);
+        } else {
+            Toast.makeText(MainActivity.this, "Turn Bluetooth on first.", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     /**

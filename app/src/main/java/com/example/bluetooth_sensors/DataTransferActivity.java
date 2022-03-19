@@ -1,136 +1,117 @@
 package com.example.bluetooth_sensors;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.bluetooth.BluetoothAdapter;
+import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.widget.TextView;
+import android.util.Log;
 
-import java.nio.ByteBuffer;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class DataTransferActivity extends AppCompatActivity {
 
-    public static final String SERVICE_ID = "00001101-0000-1000-8000-00805f9b34fb"; //SPP UUID
-    public static final String SERVICE_ADDRESS = "98:D3:71:F6:48:88"; // HC-05 BT ADDRESS
 
-    private TextView console;
-    private BluetoothAdapter bluetoothAdapter;
-    // Create a BroadcastReceiver for ACTION_FOUND.
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BluetoothDevice
-                // object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-                console.append("New device found: " + deviceName + " " + deviceHardwareAddress + "\n");
-            }
-        }
-    };
-
-    private void enableBluetooth() {
-        Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivity(enableIntent);
-    }
-
-    private boolean initBluetooth(TextView console) {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        try {
-            if (!bluetoothAdapter.isEnabled()) {
-                console.append("Bluetooth not enabled. Enabling...\n");
-                enableBluetooth();
-            }
-        } catch (Exception e) {
-            console.append("Could not enable bluetooth.\n");
-            return false;
-        }
-        console.append("Bluetooth enabled.\n");
-        return true;
-    }
-
-    private void readFromHC05(BluetoothSocket socket) {
-        byte[] msg = new byte[8];
-        float temp;
-        if (socket != null) {
-            try { // Converting the string to bytes for transferring
-                while (socket.getInputStream().available() < 4) ;
-                int readSize = socket.getInputStream().read(msg, 0, 4);
-                console.append("am citit " + readSize + "\n");
-
-                temp = ByteBuffer.wrap(msg).getFloat();
-                //Log.d("TEMP", Double.toString(temp));
-                console.append("temp: " + temp + "\n");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+    public static final String HC05_UUID = "00001101-0000-1000-8000-00805f9b34fb"; //SPP UUID
+    private List<BluetoothConnectThread> deviceThreads = new ArrayList<>(10);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_datatransfer);
-        this.console = findViewById(R.id.console);
-//        initBluetooth(console);
-//
-//        // Register for broadcasts when a device is discovered.
-//        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-//        registerReceiver(receiver, filter);
-//
-//        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-//
-//        boolean isHC05 = false;
-//        BluetoothDevice HC05 = null;
-//        if (pairedDevices.size() > 0) {
-//            console.append("Paired devices found:\n");
-//            // There are paired devices. Get the name and address of each paired device.
-//            for (BluetoothDevice device : pairedDevices) {
-//                String deviceName = device.getName();
-//                if (device.getAddress().equals(SERVICE_ADDRESS)) {
-//                    isHC05 = true;
-//                    HC05 = device;
-//                }
-//                String deviceHardwareAddress = device.getAddress(); // MAC address
-//                console.append(deviceName + " " + deviceHardwareAddress + "\n");
-//            }
-//        } else {
-//            console.append("No paired device found.\n");
-//        }
-//
-//
-//        if (isHC05) {
-//            console.append("Found Andrei. Trying to connect...\n");
-//            try {
-//                BluetoothSocket HC05Socket = HC05.createRfcommSocketToServiceRecord(UUID.fromString(SERVICE_ID));
-//                HC05Socket.connect();
-//                console.append("Connected.\n");
-//
-//                readFromHC05(HC05Socket);
-//
-//
-//            } catch (Exception e) {
-//                console.append(e.getMessage());
-//            }
-//        } else {
-//            console.append("Need to find Andrei...\n");
-//        }
+
+        // get list of available devices
+        CharSequence[] deviceAddresses = getIntent().getCharSequenceArrayExtra(MainActivity.INTENT_EXTRA);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
+
+            // get set of all node device addresses
+            Set<BluetoothDevice> bondedDevices = MainActivity.bluetoothAdapter.getBondedDevices();
+            Set<BluetoothDevice> availableDevices = bondedDevices.stream().filter(
+                    bondedDevice -> Arrays.stream(deviceAddresses).anyMatch(
+                            deviceAddress -> deviceAddress.equals(bondedDevice.getAddress())
+                    )
+            ).collect(Collectors.toSet());
+
+            // connect to each node in a new thread
+            for (BluetoothDevice device : availableDevices) {
+                BluetoothConnectThread newThread = new BluetoothConnectThread(device);
+                deviceThreads.add(newThread);
+                newThread.start();
+            }
+        } else {
+            Log.e("INIT", "Bluetooth permission denied");
+        }
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//
-//        // Don't forget to unregister the ACTION_FOUND receiver.
-//        unregisterReceiver(receiver);
-//    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        for (BluetoothConnectThread thread : deviceThreads) {
+            thread.cancel();
+        }
+    }
+
+    private class BluetoothConnectThread extends Thread {
+        private final BluetoothSocket nodeSocket;
+        private final BluetoothDevice nodeDevice;
+
+        public BluetoothConnectThread(BluetoothDevice device) {
+            nodeDevice = device;
+            BluetoothSocket temp = null;
+
+            // create socket for the required device
+            try {
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
+                    temp = nodeDevice.createInsecureRfcommSocketToServiceRecord(UUID.fromString(HC05_UUID));
+                } else {
+                    Log.e(MainActivity.LOG_TAG, "Bluetooth permission denied");
+                }
+            } catch (IOException e) {
+
+                Log.e(MainActivity.LOG_TAG, "Failed to create socket");
+            }
+
+            nodeSocket = temp;
+        }
+
+        public void run() {
+            try {
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
+                    nodeSocket.connect();
+                    Log.d(MainActivity.LOG_TAG, "Node " + nodeDevice.getAddress() + " connected successfully");
+                } else {
+                    Log.e(MainActivity.LOG_TAG, "Bluetooth permission denied");
+                }
+            } catch (IOException connectException) {
+                try {
+                    nodeSocket.close();
+                    Log.e(MainActivity.LOG_TAG, "Failed to connect to node " + nodeDevice.getAddress());
+                } catch (IOException closeException) {
+                    Log.e(MainActivity.LOG_TAG, "Failed to close socket.");
+                }
+                return;
+            }
+
+            // call method to get data from device
+        }
+
+        public void cancel() {
+            try {
+                nodeSocket.close();
+                Log.d(MainActivity.LOG_TAG, "Closed socket to " + nodeDevice.getAddress());
+            } catch (IOException e) {
+                Log.e(MainActivity.LOG_TAG, "Could not close socket to " + nodeDevice.getAddress());
+            }
+        }
+    }
 }
