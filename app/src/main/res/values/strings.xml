@@ -18,4 +18,5 @@
     <string name="connected_message">connected</string>
     <string name="disconnected_message">disconnected</string>
     <string name="log_tag">BT_SENSORS</string>
+    <string name="text_close_and_save">Close connections and save data</string>
 </resources>

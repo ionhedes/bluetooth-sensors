@@ -163,6 +163,9 @@ public class MainActivity extends AppCompatActivity
     public CharSequence[] getDeviceList() {
         File deviceFile = new File(getFilesDir(), DEVICE_LIST_FILE);
         try {
+            if (!deviceFile.exists()) {
+                deviceFile.createNewFile();
+            }
             return Files.lines(deviceFile.toPath()).toArray(CharSequence[]::new);
         } catch (Exception e) {
             Toast.makeText(MainActivity.this, "Error reading file.", Toast.LENGTH_SHORT).show();

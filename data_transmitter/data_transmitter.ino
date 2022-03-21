@@ -40,6 +40,8 @@ void convert(payload* msg)
 
 void loop() {
   char status;
+  char buf_temp[31];
+  char buf_pres[31];
   double temp,pres;
   bool success=false;
   payload data_to_send;
@@ -62,13 +64,17 @@ void loop() {
             data_to_send.values.pressure = pres;
             convert(&data_to_send);
             BTSerial.write(data_to_send.bin, 8);
-            for (int i = 0; i < 8; i++)
-            {
-              Serial.println(data_to_send.bin[i], BIN);
-            }
+//            for (int i = 0; i < 8; i++)
+//            {
+//              Serial.println(data_to_send.bin[i], BIN);
+//            }
+
+            Serial.print(data_to_send.values.temperature);
+            Serial.print(" ");
             Serial.println(temp);
+            Serial.print(data_to_send.values.pressure);
+            Serial.print(" ");
             Serial.println(pres);
-            Serial.println("");
             
             Serial.print("\n");
             delay(3000);

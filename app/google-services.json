@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "273700391609",
+    "project_id": "bluetooth-sensors",
+    "storage_bucket": "bluetooth-sensors.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273700391609:android:7c71e4b18f18fdfb1ca968",
+        "android_client_info": {
+          "package_name": "com.example.bluetooth_sensors"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273700391609-8lb0tvfed3l9lgdls433q3b473kajvt0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAC8O_k0PY16niGMER21q2w1fYlE9qmiI8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273700391609-8lb0tvfed3l9lgdls433q3b473kajvt0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

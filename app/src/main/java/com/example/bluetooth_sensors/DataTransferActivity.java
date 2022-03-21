@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -16,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bluetooth_sensors.adapters.DeviceAdapter;
 import com.example.bluetooth_sensors.model.Device;
 import com.example.bluetooth_sensors.model.LogEntry;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -106,6 +110,25 @@ public class DataTransferActivity extends AppCompatActivity {
         }
     }
 
+    public void closeConnectionsAndSaveData(View view) {
+
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageReference = storage.getReference();
+
+        for (BluetoothConnectThread thread : deviceThreads) {
+            thread.signalStop();
+            thread.cancel();
+
+            // wait for thread to die
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            storageReference.child(thread.getDeviceLogFilePath());
+        }
+    }
+
     /**
      * Used to connect to each bluetooth device in a separate thread
      */
@@ -150,6 +173,10 @@ public class DataTransferActivity extends AppCompatActivity {
             }
 
             deviceSocket = temp;
+        }
+
+        public String getDeviceLogFilePath() {
+            return deviceLogFile.getAbsolutePath();
         }
 
         private void writeCurrentLogEntryAsJson(JsonWriter deviceLogFileStream, LogEntry entry) {
@@ -268,6 +295,9 @@ public class DataTransferActivity extends AppCompatActivity {
                     Log.e(getString(R.string.log_tag), "Failed to close socket.");
                 }
             }
+
+            // set thread as stopped
+
         }
 
         /**
