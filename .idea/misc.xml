@@ -5,8 +5,10 @@
       <map>
         <entry key="..\:/Work/School/SI2022/bluetoothsensors/app/src/main/res/layout/activity_datatransfer.xml" value="0.264" />
         <entry key="..\:/Work/School/SI2022/bluetoothsensors/app/src/main/res/layout/activity_main.xml" value="0.264" />
-        <entry key="..\:/Work/School/SI2022/proiect/bluetooth-sensors/app/src/main/res/layout/activity_datatransfer.xml" value="0.33" />
+        <entry key="..\:/Work/School/SI2022/proiect/bluetooth-sensors/app/src/main/res/layout/activity_datatransfer.xml" value="0.37604166666666666" />
         <entry key="..\:/Work/School/SI2022/proiect/bluetooth-sensors/app/src/main/res/layout/activity_main.xml" value="0.358695652173913" />
+        <entry key="..\:/Work/School/SI2022/proiect/bluetooth-sensors/app/src/main/res/layout/listitem_device.xml" value="0.5" />
+        <entry key="..\:/Work/School/SI2022/proiect/bluetooth-sensors/app/src/main/res/layout/listitem_device_old.xml" value="0.7340129749768304" />
       </map>
     </option>
   </component>

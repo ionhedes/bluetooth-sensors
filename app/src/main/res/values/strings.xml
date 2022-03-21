@@ -12,5 +12,10 @@
     <string name="button_list">Print device list</string>
     <string name="title_device_list">Bonded Sensor Device List</string>
     <string name="devices_list_filename">sensor_devices.txt</string>
-
+    <string name="device_status_default">disconnected</string>
+    <string name="literal_temp">Temperature</string>
+    <string name="literal_pressure">Pressure</string>
+    <string name="connected_message">connected</string>
+    <string name="disconnected_message">disconnected</string>
+    <string name="log_tag">BT_SENSORS</string>
 </resources>

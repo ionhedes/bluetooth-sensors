@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 public class MainActivity extends AppCompatActivity
         implements PrintDeviceListDialogFragment.PrintDeviceListDialogListener {
 
-    public static final String LOG_TAG = "BT_SENSORS";
     public static final String INTENT_EXTRA = "devices";
     public static final BluetoothAdapter bluetoothAdapter= BluetoothAdapter.getDefaultAdapter();
 
@@ -41,7 +40,6 @@ public class MainActivity extends AppCompatActivity
         if (bluetoothAdapter.isEnabled()) {
             findViewById(R.id.buttonConnect).setEnabled(true);
         }
-
     }
 
     /**
@@ -124,7 +122,7 @@ public class MainActivity extends AppCompatActivity
         BufferedWriter deviceFileStream;
 
         // for debugging the file
-        Log.d("PATH", deviceFile.getAbsolutePath());
+        Log.d(getString(R.string.log_tag), deviceFile.getAbsolutePath());
 
         if (deviceAddress.isEmpty()) {
             Toast.makeText(MainActivity.this, "Please input an address", Toast.LENGTH_SHORT).show();
@@ -165,8 +163,7 @@ public class MainActivity extends AppCompatActivity
     public CharSequence[] getDeviceList() {
         File deviceFile = new File(getFilesDir(), DEVICE_LIST_FILE);
         try {
-            List<String> list = Files.lines(deviceFile.toPath()).collect(Collectors.toList());
-            return list.toArray(new CharSequence[0]);
+            return Files.lines(deviceFile.toPath()).toArray(CharSequence[]::new);
         } catch (Exception e) {
             Toast.makeText(MainActivity.this, "Error reading file.", Toast.LENGTH_SHORT).show();
             return null;

@@ -1,0 +1,46 @@
+package com.example.bluetooth_sensors.model;
+
+public class Device {
+    private final String address;
+    private final String name;
+    private float pressure = 0;
+    private float temperature = 0;
+    private String status = "disconnected";
+
+    public Device(String address, String name) {
+        this.address = address;
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public float getPressure() {
+        return pressure;
+    }
+
+    public void setPressure(float pressure) {
+        this.pressure = pressure;
+    }
+
+    public float getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(float temperature) {
+        this.temperature = temperature;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+}
