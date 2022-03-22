@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,7 +28,9 @@ import java.util.stream.Collectors;
 public class MainActivity extends AppCompatActivity
         implements PrintDeviceListDialogFragment.PrintDeviceListDialogListener {
 
-    public static final String INTENT_EXTRA = "devices";
+    public static final String INTENT_EXTRA_ADDRESSES = "devices";
+    public static final String INTENT_EXTRA_SAVE_LOCALLY = "save_locally";
+    public static final String INTENT_EXTRA_SAVE_REMOTELY = "save_remotely";
     public static final BluetoothAdapter bluetoothAdapter= BluetoothAdapter.getDefaultAdapter();
 
     private static final int REQUEST_ENABLE_BT = 5;
@@ -85,8 +88,16 @@ public class MainActivity extends AppCompatActivity
     public void connectToDevices(View view) {
         if (bluetoothAdapter.isEnabled()) {
             Intent intent = new Intent(this, DataTransferActivity.class);
-            // I can add key-value data to intents?
-            intent.putExtra(INTENT_EXTRA, getDeviceList());
+            // I can add key-value data to intents
+            intent.putExtra(INTENT_EXTRA_ADDRESSES, getDeviceList());
+
+            // check the state of the log save switches
+            Switch switchSaveLocally = findViewById(R.id.switch_save_locally);
+            Switch switchSaveRemotely = findViewById(R.id.switch_save_remotely);
+
+            intent.putExtra(INTENT_EXTRA_SAVE_LOCALLY, switchSaveLocally.isChecked());
+            intent.putExtra(INTENT_EXTRA_SAVE_REMOTELY, switchSaveRemotely.isChecked());
+
             startActivity(intent);
         } else {
             Toast.makeText(MainActivity.this, "Turn Bluetooth on first.", Toast.LENGTH_SHORT).show();

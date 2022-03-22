@@ -7,8 +7,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.JsonWriter;
 import android.util.Log;
-import android.view.View;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -17,9 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.bluetooth_sensors.adapters.DeviceAdapter;
 import com.example.bluetooth_sensors.model.Device;
 import com.example.bluetooth_sensors.model.LogEntry;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -54,8 +53,20 @@ public class DataTransferActivity extends AppCompatActivity {
     private int currentPosition = 0;
 
     /**
+     * firebase database reference for remote backing up
+     */
+    private DatabaseReference databaseReference;
+
+    /**
+     * flags for local/remote backing up of the data
+     */
+    private boolean saveLocally;
+    private boolean saveRemotely;
+
+    /**
      * Creates the layout of the activity
      * Basically generates the list of available devices and generates a recycler view for them
+     *
      * @param savedInstanceState
      */
     @Override
@@ -63,8 +74,17 @@ public class DataTransferActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_datatransfer);
 
+        databaseReference = FirebaseDatabase.getInstance(
+                this.getString(R.string.database_url)).getReference().child("logs");
+
+        // check whether you have to save your data locally, remotely, or bot
+        saveLocally = getIntent().getBooleanExtra(MainActivity.INTENT_EXTRA_SAVE_LOCALLY, false);
+        saveRemotely = getIntent().getBooleanExtra(MainActivity.INTENT_EXTRA_SAVE_REMOTELY, false);
+        Log.d(getString(R.string.log_tag), "Save locally? " + saveLocally);
+        Log.d(getString(R.string.log_tag), "Save remotely? " + saveRemotely);
+
         // get list of devices registered in the app
-        CharSequence[] registeredDeviceAddresses = getIntent().getCharSequenceArrayExtra(MainActivity.INTENT_EXTRA);
+        CharSequence[] registeredDeviceAddresses = getIntent().getCharSequenceArrayExtra(MainActivity.INTENT_EXTRA_ADDRESSES);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
 
             // get set of available devices (registered in app + paired)
@@ -72,10 +92,10 @@ public class DataTransferActivity extends AppCompatActivity {
             Set<BluetoothDevice> availableDevices =
                     MainActivity.bluetoothAdapter.getBondedDevices().stream().
                             filter(bondedDevice -> Arrays.stream(registeredDeviceAddresses).
-                                            anyMatch(deviceAddress -> deviceAddress.equals(
-                                                    bondedDevice.getAddress())
-                    )
-            ).collect(Collectors.toSet());
+                                    anyMatch(deviceAddress -> deviceAddress.equals(
+                                            bondedDevice.getAddress())
+                                    )
+                            ).collect(Collectors.toSet());
 
             // create a new thread for each available device
             for (BluetoothDevice device : availableDevices) {
@@ -110,25 +130,6 @@ public class DataTransferActivity extends AppCompatActivity {
         }
     }
 
-    public void closeConnectionsAndSaveData(View view) {
-
-        FirebaseStorage storage = FirebaseStorage.getInstance();
-        StorageReference storageReference = storage.getReference();
-
-        for (BluetoothConnectThread thread : deviceThreads) {
-            thread.signalStop();
-            thread.cancel();
-
-            // wait for thread to die
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            storageReference.child(thread.getDeviceLogFilePath());
-        }
-    }
-
     /**
      * Used to connect to each bluetooth device in a separate thread
      */
@@ -152,10 +153,19 @@ public class DataTransferActivity extends AppCompatActivity {
 
         private final File deviceLogFile;
 
+        /**
+         * reference to the node of the current device in the database
+         */
+        private final DatabaseReference currentDeviceDatabaseReference;
+
         public BluetoothConnectThread(BluetoothDevice device, int positionInList) {
             this.positionInList = positionInList;
             this.device = device;
-            this.deviceLogFile = new File(getFilesDir(), device.getAddress() + "_log.json");
+            this.deviceLogFile = new File(getFilesDir(),
+                    device.getAddress() + "_" + LogEntry.getMeasurementDate() + "_log.json");
+            this.currentDeviceDatabaseReference = databaseReference.child(
+                    "node_" + device.getAddress()
+            );
 
             // the bluetooth related fields are final, so we need a temporary reference to work with
             // before setting the deviceSocket field
@@ -175,13 +185,14 @@ public class DataTransferActivity extends AppCompatActivity {
             deviceSocket = temp;
         }
 
-        public String getDeviceLogFilePath() {
-            return deviceLogFile.getAbsolutePath();
-        }
-
         private void writeCurrentLogEntryAsJson(JsonWriter deviceLogFileStream, LogEntry entry) {
             try {
                 deviceLogFileStream.beginObject();
+
+                // first write the measurement time
+                deviceLogFileStream.name("time");
+                deviceLogFileStream.value(LogEntry.getMeasurementTime());
+
                 for (Field field : LogEntry.class.getDeclaredFields()) {
                     deviceLogFileStream.name(field.getName());
                     deviceLogFileStream.value(field.get(entry).toString());
@@ -196,9 +207,10 @@ public class DataTransferActivity extends AppCompatActivity {
 
         /**
          * Main data transfer function
+         *
          * @param deviceLogFileStream
          */
-        private void getDataFromDevice(JsonWriter deviceLogFileStream) {
+        private void getDataFromDevice(@Nullable JsonWriter deviceLogFileStream) {
             float temperature;
             float pressure;
             byte[] payload = new byte[8];
@@ -206,8 +218,11 @@ public class DataTransferActivity extends AppCompatActivity {
             try {
                 InputStream socketStream = deviceSocket.getInputStream();
 
-                // beginning JSON array (top-level in log file)
-                deviceLogFileStream.beginArray();
+                // if we save locally, start the array json structure
+                if (saveLocally) {
+                    // beginning JSON array (top-level in log file)
+                    deviceLogFileStream.beginArray();
+                }
 
                 // main reading loop
                 while (true) {
@@ -229,9 +244,17 @@ public class DataTransferActivity extends AppCompatActivity {
                         // have to update the view from the UI thread, not from the current thread
                         runOnUiThread(() -> deviceListAdapter.notifyItemChanged(positionInList));
 
-                        // write the read data to the corresponding device log
-                        LogEntry currentLogEntry = new LogEntry(device.getAddress(), temperature, pressure);
-                        writeCurrentLogEntryAsJson(deviceLogFileStream, currentLogEntry);
+                        // if necessary, save your data locally or remotely
+                        LogEntry currentLogEntry = new LogEntry(temperature, pressure);
+                        if (saveLocally) {
+                            // write the read data to the corresponding device log
+                            writeCurrentLogEntryAsJson(deviceLogFileStream, currentLogEntry);
+                        }
+
+                        if (saveRemotely) {
+                            // write the data to the database
+                            currentDeviceDatabaseReference.child(LogEntry.getMeasurementDateAndTime()).setValue(currentLogEntry);
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -239,11 +262,15 @@ public class DataTransferActivity extends AppCompatActivity {
             }
 
             try {
-                // end json array (close all brackets in logfile)
-                deviceLogFileStream.endArray();
+                // in case you had to save locally, close the json array in the file
+                if (saveLocally) {
+                    // end json array (close all brackets in logfile)
+                    deviceLogFileStream.endArray();
 
-                // close log file stream
-                deviceLogFileStream.close();
+                    // close log file stream
+                    deviceLogFileStream.close();
+                }
+
             } catch (IOException e) {
                 Log.e(getString(R.string.log_tag), "Failed to close log file for " + device.getAddress());
             }
@@ -271,17 +298,24 @@ public class DataTransferActivity extends AppCompatActivity {
                     if (deviceSocket.isConnected()) {
                         Log.d(getString(R.string.log_tag), "Node " + device.getAddress() + " connected successfully");
                         connectedDevices.get(positionInList).setStatus("connected");
+                        runOnUiThread(() -> deviceListAdapter.notifyItemChanged(positionInList));
 
                         // open the log file only if the device successfully connected
-                        JsonWriter deviceLogFileStream = new JsonWriter(new FileWriter(deviceLogFile, false));
-                        Log.d(getString(R.string.log_tag), "The path for the logfile is " +
-                                deviceLogFile.getAbsolutePath());
+                        // and the user requested to save the logs locally
+                        if (saveLocally) {
+                            JsonWriter deviceLogFileStream = new JsonWriter(new FileWriter(deviceLogFile, false));
+                            Log.d(getString(R.string.log_tag), "The path for the logfile is " +
+                                    deviceLogFile.getAbsolutePath());
 
-                        // call method to get data from device
-                        getDataFromDevice(deviceLogFileStream);
+                            // call method to get data from device
+                            getDataFromDevice(deviceLogFileStream);
+                            // close the log file
+                            deviceLogFileStream.close();
+                        } else {
+                            // call method to get data from device
+                            getDataFromDevice(null);
 
-                        // close the log file
-                        deviceLogFileStream.close();
+                        }
                     }
 
                 } else {
@@ -295,9 +329,6 @@ public class DataTransferActivity extends AppCompatActivity {
                     Log.e(getString(R.string.log_tag), "Failed to close socket.");
                 }
             }
-
-            // set thread as stopped
-
         }
 
         /**
@@ -306,6 +337,8 @@ public class DataTransferActivity extends AppCompatActivity {
         public void cancel() {
             try {
                 if (deviceSocket.isConnected()) {
+                    connectedDevices.get(positionInList).setStatus("disconnected");
+                    runOnUiThread(() -> deviceListAdapter.notifyItemChanged(positionInList));
                     deviceSocket.close();
                     Log.d(getString(R.string.log_tag), "Closed socket to " + device.getAddress());
                 }

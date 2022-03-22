@@ -1,30 +1,41 @@
 package com.example.bluetooth_sensors.model;
 
-import androidx.annotation.NonNull;
-
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 
 public class LogEntry {
-    public String measurementTime;
-    public String deviceAddress;
-    public float temperature;
-    public float pressure;
+    public final float temperature;
+    public final float pressure;
 
-    public LogEntry(String deviceAddress, float temperature, float pressure) {
+    public static String getMeasurementDate() {
         LocalDateTime now = LocalDateTime.now();
+        DecimalFormat decimalFormat = new DecimalFormat();
+        decimalFormat.setMinimumIntegerDigits(2);
 
-        this.measurementTime = now.toString();
-        this.deviceAddress = deviceAddress;
-        this.temperature = temperature;
-        this.pressure = pressure;
+        String measurementDate = now.getYear() + "-"
+                + decimalFormat.format(now.getMonthValue()) + "-"
+                + decimalFormat.format(now.getDayOfMonth());
+        return measurementDate;
     }
 
-    public String getMeasurementTime() {
+    public static String getMeasurementTime() {
+        LocalDateTime now = LocalDateTime.now();
+        DecimalFormat decimalFormat = new DecimalFormat();
+        decimalFormat.setMinimumIntegerDigits(2);
+
+        String measurementTime = decimalFormat.format(now.getHour()) + "-"
+                + decimalFormat.format(now.getMinute()) + "-"
+                + decimalFormat.format(now.getSecond());
         return measurementTime;
     }
 
-    public String getDeviceAddress() {
-        return deviceAddress;
+    public static String getMeasurementDateAndTime() {
+        return getMeasurementDate() + "-" + getMeasurementTime();
+    }
+
+    public LogEntry(float temperature, float pressure) {
+        this.temperature = temperature;
+        this.pressure = pressure;
     }
 
     public float getTemperature() {
