@@ -233,8 +233,9 @@ public class DataTransferActivity extends AppCompatActivity {
                         // read 8 bytes (4 temperature, 4 pressure)
                         socketStream.read(payload, 0, 8);
 
-                        temperature = ByteBuffer.wrap(payload, 0, 4).getFloat();
-                        pressure = ByteBuffer.wrap(payload, 4, 4).getFloat();
+                        temperature = (float) ByteBuffer.wrap(payload, 0, 4).getInt() / 10;
+                        pressure = (float) ByteBuffer.wrap(payload, 4, 4).getInt() / 100;
+
 
                         // update the underlying array of the list
                         connectedDevices.get(positionInList).setTemperature(temperature);
