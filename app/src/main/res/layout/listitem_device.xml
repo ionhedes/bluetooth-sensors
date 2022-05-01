@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="115dp"
+    android:layout_height="190dp"
+    android:baselineAligned="false"
     android:orientation="horizontal">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="0.5"
+        android:layout_weight="0.25"
         android:orientation="vertical">
 
 
         <TextView
             android:id="@+id/text_name"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
+            android:layout_height="50dp"
             android:text="TextView"
             android:textAlignment="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Display1" />
@@ -23,17 +23,16 @@
         <TextView
             android:id="@+id/text_addr"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="4"
+            android:layout_height="20dp"
             android:text="TextView"
             android:textAlignment="center" />
 
         <TextView
             android:id="@+id/text_status"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="4"
+            android:layout_height="20dp"
             android:text="TextView"
+            android:textAlignment="center"
             android:textColor="#009688" />
 
     </LinearLayout>
@@ -54,7 +53,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="0.4"
-            android:text="-"
+            android:text="@string/literal_value_placeholder"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textColor="#FF9800" />
 
@@ -69,7 +68,37 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="0.4"
-            android:text="-"
+            android:text="@string/literal_value_placeholder"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="#FF9800" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/literal_ch4" />
+
+        <TextView
+            android:id="@+id/text_ch4"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="0.4"
+            android:text="@string/literal_value_placeholder"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="#FF9800" />
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/literal_CO" />
+
+        <TextView
+            android:id="@+id/text_co"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="0.4"
+            android:text="@string/literal_value_placeholder"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textColor="#FF9800" />
     </LinearLayout>

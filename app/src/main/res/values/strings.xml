@@ -18,8 +18,14 @@
     <string name="connected_message">connected</string>
     <string name="disconnected_message">disconnected</string>
     <string name="log_tag">BT_SENSORS</string>
-    <string name="text_close_and_save">apeși degeaba</string>
+    <string name="text_test_alert">Test alert</string>
     <string name="database_url">https://bluetooth-sensors-default-rtdb.europe-west1.firebasedatabase.app/</string>
     <string name="text_save_locally">Save data locally</string>
     <string name="text_save_remotely">Save data remotely</string>
+    <string name="literal_ch4">CH4</string>
+    <string name="literal_CO">CO</string>
+    <string name="literal_celsius">°C</string>
+    <string name="literal_value_placeholder">-</string>
+    <string name="literal_hpa">hPa</string>
+    <string name="literal_ppm">ppm</string>
 </resources>

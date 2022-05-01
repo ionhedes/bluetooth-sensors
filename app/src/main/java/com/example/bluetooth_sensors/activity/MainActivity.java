@@ -1,4 +1,4 @@
-package com.example.bluetooth_sensors;
+package com.example.bluetooth_sensors.activity;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -15,6 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
+
+import com.example.bluetooth_sensors.R;
+import com.example.bluetooth_sensors.fragment.PrintDeviceListDialogFragment;
 
 import java.io.BufferedWriter;
 import java.io.File;
