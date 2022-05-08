@@ -620,6 +620,8 @@ void convert(payload* msg)
 void setup() {
   Wire.begin();
   Serial.begin(9600);
+  Serial.println("Waiting for current stabilization throughout the circuit...");
+  delay(2000);
   Serial.println("Initializing HC-05...");
   BTSerial.begin(9600);
   
