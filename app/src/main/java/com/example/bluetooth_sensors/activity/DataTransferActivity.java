@@ -18,10 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bluetooth_sensors.R;
-import com.example.bluetooth_sensors.activity.MainActivity;
 import com.example.bluetooth_sensors.adapter.DeviceAdapter;
-import com.example.bluetooth_sensors.model.Device;
 import com.example.bluetooth_sensors.fragment.GasLevelAlertDialogFragment;
+import com.example.bluetooth_sensors.model.Device;
 import com.example.bluetooth_sensors.model.LogEntry;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -73,6 +72,8 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
      * Variable used for storing the sound played when the gas concentration is too high
      */
     private Ringtone alertSound;
+
+    private final GasLevelAlertDialogFragment dialog = new GasLevelAlertDialogFragment();
 
     /**
      * Creates the layout of the activity
@@ -142,12 +143,21 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
             thread.cancel();
             Log.d(getString(R.string.log_tag), "Thread " + thread.getName() + " is alive " + thread.isAlive());
         }
+
+        if (alertSound.isPlaying()) {
+            alertSound.stop();
+        }
     }
 
     public void testGasAlert(View view) {
-        GasLevelAlertDialogFragment dialog = new GasLevelAlertDialogFragment();
-        dialog.show(getSupportFragmentManager(), "GasLevelAlertDialogFragment");
-        alertSound.play();
+        fireDialog();
+    }
+
+    private void fireDialog() {
+        if (!dialog.isVisible() && GasLevelAlertDialogFragment.armed) {
+            dialog.show(getSupportFragmentManager(), "GasLevelAlertDialogFragment");
+            alertSound.play();
+        }
     }
 
     /**
@@ -228,6 +238,8 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
             }
         }
 
+
+
         /**
          * Main data transfer function
          *
@@ -241,6 +253,7 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
             byte[] payload = new byte[16];
 
             try {
+
                 InputStream socketStream = deviceSocket.getInputStream();
 
                 // if we save locally, start the array json structure
@@ -252,6 +265,7 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
 
                 // main reading loop
                 while (true) {
+
                     if (shouldStop) {
                         // thread should exit, so we break the loop
                         break;
@@ -277,9 +291,7 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
 
                         // activate alert dialog if levels exceed threshold
                         if (ch4 >= CH4_ALERT_LEVEL || co >= CO_ALERT_LEVEL) {
-                            GasLevelAlertDialogFragment dialog = new GasLevelAlertDialogFragment();
-                            dialog.show(getSupportFragmentManager(), "GasLevelAlertDialogFragment");
-                            alertSound.play();
+                            fireDialog();
                         }
 
                         // if necessary, save your data locally or remotely
@@ -354,7 +366,6 @@ public class DataTransferActivity extends AppCompatActivity implements GasLevelA
                         } else {
                             // call method to get data from device
                             getDataFromDevice(null);
-
                         }
                     }
 

@@ -9,6 +9,7 @@
 #define SIZEOF_LONG 4
 
 // powers of two
+// these macros are defined so we replace repetitive calls to pow(2, x), which take a lot of time
 #define TWO_POW_2 4
 #define TWO_POW_4 16
 #define TWO_POW_8 256
@@ -17,6 +18,135 @@
 #define TWO_POW_13 8192
 #define TWO_POW_15 32768
 #define TWO_POW_16 65536
+
+////////////////////////////////////////////////////
+// MQ-4/MQ-7 RELATED DECLARATIONS AND DEFINITIONS //
+////////////////////////////////////////////////////
+
+#define CO_TYPE 7
+#define CH4_TYPE 4
+
+#define CH4_SENSOR_PIN A2
+#define CO_SENSOR_PIN A3
+
+#define RL 1000                                                       // Ohm; Load resistance on the MQ breakout boards
+
+#define convert_to_voltage(value) ((float) (value * 5.0 / 1023.0))    // converts an integer between 0 and 1023 into a double between 0 and 5
+
+#define MAX_READING_HISTORY 10                                        // used for setting how many previous readings should be recorded
+
+/**
+ * @brief Data structure for MQ breakout boards
+ */
+typedef struct MQ
+{
+  uint8_t pin;                                                        // the pin the board is connected to
+  uint8_t type;                                                       // type of sensor installed on board; 7 - CO, 4 - CH4    
+  float r0;                                                           // sensor resistance in clean air
+  float coef_a;                                                       // used in calculations of real ppm
+  float coef_b;                                                       // used in calculation of real ppm
+  uint16_t prev_readings[MAX_READING_HISTORY];                        // stores the previous readings
+  uint8_t prev_reading_index;                                         // index of latest entry in array
+  bool initial_sequence_done;                                         // if the previous reading array is not filled yet, we must ignore the 0's inside when averaging
+} MQ;
+
+// Variables for each used sensor
+MQ co, ch4;
+
+/**
+ * @brief Calculates the value of the resistance in clean air.
+ * This function is called when the node is powered up.
+ * It assumes that the sensor is in clean air.
+ * If not in clean air, or the values look weird, 
+ * reset the Arduino using the on-board button
+ * 
+ * @param sensor the sensor structure
+ * @param clean_air_ratio RS/R0 in clean air, according to the datasheet
+ * @return double the value of r0
+ **/
+double get_r0(const MQ sensor, const uint8_t clean_air_ratio)
+{
+  uint16_t raw_value = analogRead(sensor.pin);                          // read the raw data from the sensor                    
+  float voltage = convert_to_voltage(raw_value);                        // convert the read value to a voltage
+  float r0 = (((5.0 * RL) / voltage) - RL) / clean_air_ratio;           // derived from the voltage divider formula; clean_air_ration only needed here
+  return r0;
+}
+
+/**
+ * @brief Initializes the MQ structure.
+ */
+void init_mq(MQ* sensor, const uint8_t pin, const uint8_t type, const float coef_a, const float coef_b)
+{
+  sensor->pin = pin;
+  sensor->type = type;
+  sensor->coef_a = coef_a;
+  sensor->coef_b = coef_b;
+  
+  if (type == CO_TYPE)
+  {
+    sensor->r0 = get_r0(*sensor, 10);
+  }
+  else
+  {
+    sensor->r0 = get_r0(*sensor, 1);
+  }
+
+  for (uint8_t i = 0; i < MAX_READING_HISTORY; i++)
+  {
+    sensor->prev_readings[i] = 0;
+  }
+  
+  sensor->prev_reading_index = 0;
+  sensor->initial_sequence_done = false;
+}
+
+/**
+ * @brief Calculates and returns the actual ppm value for the specified sensor.
+ * Not used because it is subject to transient errors,
+ * but it is still good to have it around
+ */
+double get_ppm(const MQ sensor)
+{
+  uint16_t raw_value = analogRead(sensor.pin);                          // read the raw data from the sensor
+  float voltage = convert_to_voltage(raw_value);                        // convert the read value to a voltage
+  float rs = ((5.0 * RL) / voltage) - RL;                               // derived from the voltage divider formula
+  float ratio = rs / sensor.r0;                                         // calculate the resistance ratio
+  return sensor.coef_a * pow(ratio, sensor.coef_b);                     // plug the ratio in the exponential function with set coefficients
+}
+
+/**
+ * @brief Calculates and returns the averaged ppm value for the last MAX_READING_HISTORY readings.
+ * Much like get_ppm(), but it also uses the previous readings' array,
+ * and it also averages the values found there
+ * 
+ * By using get_averaged_ppm we benefit in two ways:
+ * 1. we get more stable values
+ * 2. we don't have to call pow once every reading, but once every 10 readings
+ */
+double get_averaged_ppm(MQ* sensor)
+{           
+  uint16_t crt_reading = analogRead(sensor->pin);
+
+  sensor->prev_readings[sensor->prev_reading_index++] = crt_reading;
+  if (sensor->prev_reading_index == MAX_READING_HISTORY)
+  {
+    sensor->initial_sequence_done = true;
+  }
+  sensor->prev_reading_index %= MAX_READING_HISTORY;
+
+  float reading_average = 0;
+  for (uint8_t i = 0; i < MAX_READING_HISTORY; i++)
+  {
+    reading_average += sensor->prev_readings[i];
+  }
+  reading_average /= (sensor->initial_sequence_done ? MAX_READING_HISTORY : sensor->prev_reading_index);
+
+  // convert the reading average to a ppm value
+  float voltage = convert_to_voltage(reading_average);
+  float rs = ((5.0 * RL) / voltage) - RL;
+  float ratio = rs / sensor->r0;
+  return sensor->coef_a * pow(ratio, sensor->coef_b);
+}
 
 /////////////////////////////////////////////////
 // BMP180 RELATED DECLARATIONS AND DEFINITIONS //
@@ -114,6 +244,7 @@ int read_ushort(const byte start_addr, uint16_t* value)
   }
   else
   {
+    // swaps bytes
     *value = ((uint16_t) byte_value[0] << 8 | (uint16_t) byte_value[1]);
     return 0;
   }
@@ -403,7 +534,7 @@ int32_t calculate_true_pressure(int32_t up, int32_t oss, int32_t b5)
  * @param t Address where the true temperature will be stored
  * @return int32_t 0 if ok, -1 if error
  */
-int32_t get_values(int32_t* p, int32_t* t)
+int32_t get_bmp_values(int32_t* p, int32_t* t)
 {
   int32_t ut = read_uncompensated_temperature_value();
 
@@ -442,19 +573,21 @@ SoftwareSerial BTSerial(BT_SERIAL_RX_PIN, BT_SERIAL_TX_PIN);
 
 /**
  * @brief Data structure used for transferring 
- * data fetched from the BMP180 to the HC-05.
- * The BMP180 will output two int32_t values 
+ * data fetched from the sensors to the HC-05.
+ * The sensors will output 4 int32_t values 
  * through the use of the previous functions.
  * These values will be transferred to the HC-05 (bluetooth module) 
- * as an array of 8 bytes.
+ * as an array of 16 bytes.
  * 
  */
 typedef union {
   struct {
     int32_t temperature;
     int32_t pressure;
+    int32_t ch4_ppm;
+    int32_t co_ppm;
   } values;
-  byte bin[8];
+  byte bin[16];
 } payload;
 
 /**
@@ -468,19 +601,17 @@ void convert(payload* msg);
  
 void convert(payload* msg)
 {
-  byte* aux = new byte(8);
-  memcpy(aux, msg->bin, (size_t) 8);
-  
+  byte* aux = new byte(16);
+  memcpy(aux, msg->bin, (size_t) 16);
+
   for (int i = 0; i < 4; i++)
   {
-    msg->bin[i] = aux[3 - i];
+    for (int j = 0; j < 4; j++)
+    {
+      msg->bin[4 * i + j] = aux[4 * i + 3 - j];
+    }
   }
-
-  for (int i = 4; i < 8; i++)
-  {
-    msg->bin[i] = aux[11 - i];
-  }
-
+  
   delete(aux);
 }
 
@@ -491,37 +622,65 @@ void convert(payload* msg)
 void setup() {
   Wire.begin();
   Serial.begin(9600);
+  Serial.println("Initializing HC-05...");
   BTSerial.begin(9600);
-  read_calibration_data();
+  
+  // Init BMP-180
+  Serial.println("Initializing BMP-180...");
+  if (read_calibration_data() == -1)
+  {
+    Serial.println("Failed to initialize BMP-180. Please reset.");
+    while(1);
+  }
+  
+  // Init the gas sensors
+  Serial.println("Initializing MQ-7...");
+  init_mq(&co, CO_SENSOR_PIN, CO_TYPE, 611.082, -2.1048776); // co
+  Serial.print("MQ-7 R0 = ");
+  Serial.println(co.r0);
+  Serial.println("Initializing MQ-4...");
+  init_mq(&ch4, CH4_SENSOR_PIN, CH4_TYPE, 38.9835, -1.409119); // ch4
+  Serial.print("MQ-4 R0 = ");
+  Serial.println(ch4.r0);
 }
 
+
 void loop() {
-  int32_t _error;
-  int32_t tmp_debug;
-  int32_t pres_debug;
+  int32_t ret_val;
   payload data_to_send;
 
-  // Get the pressure and temperature readings
-  _error = get_values(&data_to_send.values.pressure, &data_to_send.values.temperature);
-  if (_error != -1)
-  {
+  // Because the floating point format of Arduino and Android are not always overlapping (experimentally deduced),
+  // we use integers for the data transfer, which are converted to floats on destination
+  
+  // Get the pressure and temperature values
+  ret_val = get_bmp_values(&data_to_send.values.pressure, &data_to_send.values.temperature);
+
+  // Get the gas concentration values
+  float ch4_averaged_ppm = get_averaged_ppm(&ch4);
+  float co_averaged_ppm = get_averaged_ppm(&co);
+  data_to_send.values.ch4_ppm = (int32_t) (ch4_averaged_ppm * 100);
+  data_to_send.values.co_ppm = (int32_t) (co_averaged_ppm * 100);
+
+  if (ret_val != -1)
+  { 
     // For debugging
-    tmp_debug = data_to_send.values.temperature;
-    tmp_debug = data_to_send.values.pressure;
-    Serial.println(data_to_send.values.temperature, BIN);
-    Serial.println(data_to_send.values.pressure, BIN);
-    Serial.println("");        
+    Serial.print("Temperature:\t");
+    Serial.print((float) data_to_send.values.temperature / 10);
+    Serial.print("C\n");
+    Serial.print("Pressure:\t");
+    Serial.print((float) data_to_send.values.pressure / 100);
+    Serial.print("hPa\n");
+    Serial.print("CH4:\t\t");
+    Serial.print((float) data_to_send.values.ch4_ppm / 100);
+    Serial.print("ppm\n");
+    Serial.print("CO:\t\t");
+    Serial.print((float) data_to_send.values.co_ppm / 100);
+    Serial.print("ppm\n");
     Serial.print("\n");
 
     // If valid numbers were read, convert the data and send it to the HC-05
     convert(&data_to_send);
-    BTSerial.write(data_to_send.bin, 8);
-
-    convert(&data_to_send);
-    Serial.println(data_to_send.values.temperature, BIN);
-    Serial.println(data_to_send.values.pressure, BIN);
-    Serial.println("");        
-    Serial.print("\n");
+    BTSerial.write(data_to_send.bin, 16);
   }
 
   delay(3000);
