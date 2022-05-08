@@ -4,6 +4,7 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -106,6 +107,16 @@ public class MainActivity extends AppCompatActivity
             Toast.makeText(MainActivity.this, "Turn Bluetooth on first.", Toast.LENGTH_SHORT).show();
         }
 
+    }
+
+    /**
+     * On-click callback for Help button
+     * @param view
+     */
+    public void getHelp(View view) {
+        Uri uri = Uri.parse("https://github.com/ionhedes/bluetooth-sensors");
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        startActivity(intent);
     }
 
     /**

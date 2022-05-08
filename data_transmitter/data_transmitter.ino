@@ -119,9 +119,7 @@ double get_ppm(const MQ sensor)
  * Much like get_ppm(), but it also uses the previous readings' array,
  * and it also averages the values found there
  * 
- * By using get_averaged_ppm we benefit in two ways:
- * 1. we get more stable values
- * 2. we don't have to call pow once every reading, but once every 10 readings
+ * By using get_averaged_ppm we get more stable values
  */
 double get_averaged_ppm(MQ* sensor)
 {           
