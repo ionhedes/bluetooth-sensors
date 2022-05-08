@@ -94,7 +94,7 @@ def main():
                  + sys.argv[2]
                  + ' on '
                  + now.strftime('%Y/%m/%d, %H:%M:%S'), fontsize=24)
-    plt.savefig('temp.png')
+    plt.savefig('data_' + now.strftime('%Y_%m_%d_%H_%M_%S') + '.png')
 
 
 # Press the green button in the gutter to run the script.
