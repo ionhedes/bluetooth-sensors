@@ -27,3 +27,5 @@ gradle-app.setting
 
 *.png
 /venv
+/data_fetcher/.idea
+/data_fetcher/build
