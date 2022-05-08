@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "bluetooth-sensors",
+  "private_key_id": "c8ac0bfaf1699e2ae65ef6f95f76d8e8f5bdabb1",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC7Gd/OUyh0QF8i\ngKVhlXt+YDb4wPL3wH/S729B71EHUtpYp9CL7rh7o3eBhWNnxraJZyCh2COsWzaV\nar6gC8NjJ5HxRuB2Uq7oOBBlQNxzD+mDycqT2hTp+L79V6l5xmS9b+lb66Pr4hRu\nXADuyycnGKv+PJEQdMk/U4beiBiGUxhctdH2wNzkzbUjjDDfq4LQX+HAXvqID90P\njUB6mDDAV6IfhrZTHLDDFer8VeztSd7dzJBBEoK7pudg1va+pVOGCLaKfNiUoV7r\nmFT0nKpT1nESTIptd8NWkiMejlR04ggqaExm0bXoXjDJO7nuvFflTqWN+3lnLQv6\n02BQiAXXAgMBAAECggEABtmO/LTFWbbe72/E85T6F8mvTt1xh78qbtnejuFowVs3\n1zW9nYHjNdOUP8+sW1Obwd1er84umtQeuXWrqPGv+OStTnyzzGEr5Ms4qRxTddBH\n/PqESh7FKT5hb6ZSnry0BM4gvawbgjqdWN+mwRdQRaQnl9U2fQ2+2GysbAqQ1fS1\n9VDLImNa4iJRj/fE2RbCPSPdKNNHg70ULZASA3CsMj7JbpeRQk7wIbeqqIZvc5IX\nEKArvlwUrxdRNT4rcWFqnTYWEQSRvtCUEQKYl0mQavr9BpKhBITI8MtuROX2QB3g\n+py1Y5PvmJcx8qFjpqIOT/aoYZlzGlRL5Yi0owCQcQKBgQD/wZhxt1oP+VokeALg\nsL4MhHQyxppbkiJaOeKQZpqjk98HNP2+0L77xCiWC6R3oD2NwKNpDStUgy1E2f+a\nOj6OH1r8VOPihOSD57SxzfEHbRE9bXfeg85A2vQpUiumzUPfPVgKvP9u+TeWRAf6\nxhuRp03mJ3PYgyVkYz+a/h2YTQKBgQC7R4bi3DFjRhYPd0FiTSEIVsrubAdOMIwk\nTewsZVyxNdOdr3X9o8bKnuwC5+YGw1EIV3+b3zR1pznMbyZiwOnLc4y6hLLFeULq\nEVVY1OyucAuMrOfHPy65cNYyqwAcU3TJfLXHJTv+m+oVvNN6BGHvo2c14ImLkzfb\ndu9ef3SoswKBgDOEOoHFbgXDs22fIu1BjLaWw5UqvhLt56+G82Uk1cdXVNhtyyLx\nh1bNV2OJ6tIR2/Q+tmvFtFGsrqSsyLi3PLyCAmDLdK+/Fwye0p3yHrfhN1TJRRj0\nMcqMkBv2qkZKGH7SK3bWRRmEZ7cD8xuHZiw7qAxRLBuTpyeGelxtDWcNAoGAV7KB\n3n/f/K3YLLvaeU7G1iHWe1lI/ntLVMDMhGmewzkCdEeyx+hGcaGDwUSYebhCnNZk\nYjheV23MagfugLX3hRcB4mG7WS+UfwlI3wUuI+1B60kYbDwRBDNrimR688i82pE0\niiHMe0jFkBJRMUUWG2J4NUmE/0AcGwARzT2AAnMCgYBh8qGM6Q6QpJODdjQ3gRo+\nTDeKIINwSZAqjhMAY4WbdPE2jE73cnya3ENlVR3XCII8sbF7qzavG7hS6cnwOtk9\nUDmhaEmRtBlMNFy52mZq+C9ETn599wQRXTljvs7uau1Uk3aYTN0cbeHj+Glymf96\nS6A/SkDH7XCw1RqQoU6n3A==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-nt0gl@bluetooth-sensors.iam.gserviceaccount.com",
+  "client_id": "106788892622538797502",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-nt0gl%40bluetooth-sensors.iam.gserviceaccount.com"
+}
