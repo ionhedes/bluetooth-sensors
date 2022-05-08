@@ -29,3 +29,8 @@ gradle-app.setting
 /venv
 /data_fetcher/.idea
 /data_fetcher/build
+
+
+# don't post privacy concerning database keys
+google-services.json
+/data_fetcher/firebase_key.json
