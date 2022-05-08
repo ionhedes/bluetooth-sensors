@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 public class LogEntry {
     public final float temperature;
     public final float pressure;
+    public final float ch4;
+    public final float co;
 
     public static String getMeasurementDate() {
         LocalDateTime now = LocalDateTime.now();
@@ -33,9 +35,11 @@ public class LogEntry {
         return getMeasurementDate() + "-" + getMeasurementTime();
     }
 
-    public LogEntry(float temperature, float pressure) {
+    public LogEntry(float temperature, float pressure, float ch4, float co) {
         this.temperature = temperature;
         this.pressure = pressure;
+        this.ch4 = ch4;
+        this.co = co;
     }
 
     public float getTemperature() {

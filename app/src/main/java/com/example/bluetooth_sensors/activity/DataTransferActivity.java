@@ -1,12 +1,15 @@
-package com.example.bluetooth_sensors;
+package com.example.bluetooth_sensors.activity;
 
 import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.pm.PackageManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.os.Bundle;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,7 +17,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bluetooth_sensors.adapters.DeviceAdapter;
+import com.example.bluetooth_sensors.R;
+import com.example.bluetooth_sensors.adapter.DeviceAdapter;
+import com.example.bluetooth_sensors.fragment.GasLevelAlertDialogFragment;
 import com.example.bluetooth_sensors.model.Device;
 import com.example.bluetooth_sensors.model.LogEntry;
 import com.google.firebase.database.DatabaseReference;
@@ -33,7 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class DataTransferActivity extends AppCompatActivity {
+public class DataTransferActivity extends AppCompatActivity implements GasLevelAlertDialogFragment.GasLevelAlertDialogListener {
 
     /**
      * SPP UUID for any HC-05 bluetooth adapter
@@ -64,6 +69,13 @@ public class DataTransferActivity extends AppCompatActivity {
     private boolean saveRemotely;
 
     /**
+     * Variable used for storing the sound played when the gas concentration is too high
+     */
+    private Ringtone alertSound;
+
+    private final GasLevelAlertDialogFragment dialog = new GasLevelAlertDialogFragment();
+
+    /**
      * Creates the layout of the activity
      * Basically generates the list of available devices and generates a recycler view for them
      *
@@ -82,6 +94,9 @@ public class DataTransferActivity extends AppCompatActivity {
         saveRemotely = getIntent().getBooleanExtra(MainActivity.INTENT_EXTRA_SAVE_REMOTELY, false);
         Log.d(getString(R.string.log_tag), "Save locally? " + saveLocally);
         Log.d(getString(R.string.log_tag), "Save remotely? " + saveRemotely);
+
+        // initialize the alert sound
+        alertSound = RingtoneManager.getRingtone(getApplicationContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
 
         // get list of devices registered in the app
         CharSequence[] registeredDeviceAddresses = getIntent().getCharSequenceArrayExtra(MainActivity.INTENT_EXTRA_ADDRESSES);
@@ -128,6 +143,21 @@ public class DataTransferActivity extends AppCompatActivity {
             thread.cancel();
             Log.d(getString(R.string.log_tag), "Thread " + thread.getName() + " is alive " + thread.isAlive());
         }
+
+        if (alertSound.isPlaying()) {
+            alertSound.stop();
+        }
+    }
+
+    public void testGasAlert(View view) {
+        fireDialog();
+    }
+
+    private void fireDialog() {
+        if (!dialog.isVisible() && GasLevelAlertDialogFragment.armed) {
+            dialog.show(getSupportFragmentManager(), "GasLevelAlertDialogFragment");
+            alertSound.play();
+        }
     }
 
     /**
@@ -157,6 +187,9 @@ public class DataTransferActivity extends AppCompatActivity {
          * reference to the node of the current device in the database
          */
         private final DatabaseReference currentDeviceDatabaseReference;
+
+        private final float CH4_ALERT_LEVEL = 1000;
+        private final float CO_ALERT_LEVEL = 75;
 
         public BluetoothConnectThread(BluetoothDevice device, int positionInList) {
             this.positionInList = positionInList;
@@ -205,6 +238,8 @@ public class DataTransferActivity extends AppCompatActivity {
             }
         }
 
+
+
         /**
          * Main data transfer function
          *
@@ -213,42 +248,57 @@ public class DataTransferActivity extends AppCompatActivity {
         private void getDataFromDevice(@Nullable JsonWriter deviceLogFileStream) {
             float temperature;
             float pressure;
-            byte[] payload = new byte[8];
+            float ch4;
+            float co;
+            byte[] payload = new byte[16];
 
             try {
+
                 InputStream socketStream = deviceSocket.getInputStream();
 
                 // if we save locally, start the array json structure
                 if (saveLocally) {
                     // beginning JSON array (top-level in log file)
+                    assert deviceLogFileStream != null;
                     deviceLogFileStream.beginArray();
                 }
 
                 // main reading loop
                 while (true) {
+
                     if (shouldStop) {
                         // thread should exit, so we break the loop
                         break;
-                    } else if (socketStream.available() >= 8) {
+                    } else if (socketStream.available() >= 16) {
                         // read 8 bytes (4 temperature, 4 pressure)
-                        socketStream.read(payload, 0, 8);
+                        socketStream.read(payload, 0, 16);
 
                         temperature = (float) ByteBuffer.wrap(payload, 0, 4).getInt() / 10;
                         pressure = (float) ByteBuffer.wrap(payload, 4, 4).getInt() / 100;
+                        ch4 = (float) ByteBuffer.wrap(payload, 8, 4).getInt() / 100;
+                        co = (float) ByteBuffer.wrap(payload, 12, 4).getInt() / 100;
 
 
                         // update the underlying array of the list
                         connectedDevices.get(positionInList).setTemperature(temperature);
                         connectedDevices.get(positionInList).setPressure(pressure);
+                        connectedDevices.get(positionInList).setCh4(ch4);
+                        connectedDevices.get(positionInList).setCo(co);
 
                         // signal the recycler view that its data was updated
                         // have to update the view from the UI thread, not from the current thread
                         runOnUiThread(() -> deviceListAdapter.notifyItemChanged(positionInList));
 
+                        // activate alert dialog if levels exceed threshold
+                        if (ch4 >= CH4_ALERT_LEVEL || co >= CO_ALERT_LEVEL) {
+                            fireDialog();
+                        }
+
                         // if necessary, save your data locally or remotely
-                        LogEntry currentLogEntry = new LogEntry(temperature, pressure);
+                        LogEntry currentLogEntry = new LogEntry(temperature, pressure, ch4, co);
                         if (saveLocally) {
                             // write the read data to the corresponding device log
+                            assert deviceLogFileStream != null;
                             writeCurrentLogEntryAsJson(deviceLogFileStream, currentLogEntry);
                         }
 
@@ -266,6 +316,7 @@ public class DataTransferActivity extends AppCompatActivity {
                 // in case you had to save locally, close the json array in the file
                 if (saveLocally) {
                     // end json array (close all brackets in logfile)
+                    assert deviceLogFileStream != null;
                     deviceLogFileStream.endArray();
 
                     // close log file stream
@@ -315,7 +366,6 @@ public class DataTransferActivity extends AppCompatActivity {
                         } else {
                             // call method to get data from device
                             getDataFromDevice(null);
-
                         }
                     }
 

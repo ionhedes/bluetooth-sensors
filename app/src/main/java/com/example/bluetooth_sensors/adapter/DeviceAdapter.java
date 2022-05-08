@@ -1,4 +1,4 @@
-package com.example.bluetooth_sensors.adapters;
+package com.example.bluetooth_sensors.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -39,6 +39,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         private final TextView textDeviceStatus;
         private final TextView textDeviceReceivedTemperature;
         private final TextView textDeviceReceivedPressure;
+        private final TextView textDeviceReceivedCH4;
+        private final TextView textDeviceReceivedCO;
 
         public ViewHolder(View view) {
             super(view);
@@ -48,6 +50,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             textDeviceStatus = view.findViewById(R.id.text_status);
             textDeviceReceivedTemperature = view.findViewById(R.id.text_temp);
             textDeviceReceivedPressure = view.findViewById(R.id.text_pressure);
+            textDeviceReceivedCH4 = view.findViewById(R.id.text_ch4);
+            textDeviceReceivedCO = view.findViewById(R.id.text_co);
         }
 
         public TextView getTextDeviceName() {
@@ -68,6 +72,14 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
         public TextView getTextDeviceReceivedPressure() {
             return textDeviceReceivedPressure;
+        }
+
+        public TextView getTextDeviceReceivedCH4() {
+            return textDeviceReceivedCH4;
+        }
+
+        public TextView getTextDeviceReceivedCO() {
+            return textDeviceReceivedCO;
         }
     }
 
@@ -105,16 +117,19 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         viewHolder.getTextDeviceName().setText(deviceList.get(position).getName());
         viewHolder.getTextDeviceAddress().setText(deviceList.get(position).getAddress());
         viewHolder.getTextDeviceStatus().setText(deviceList.get(position).getStatus());
-        viewHolder.getTextDeviceReceivedTemperature().setText(
-                String.valueOf(
-                        deviceList.get(position).getTemperature()
-                )
-        );
-        viewHolder.getTextDeviceReceivedPressure().setText(
-                String.valueOf(
-                        deviceList.get(position).getPressure()
-                )
-        );
+        String string_temp = String.valueOf(
+                deviceList.get(position).getTemperature()
+        ) + "°C";
+        viewHolder.getTextDeviceReceivedTemperature().setText(string_temp);
+        String string_pres = String.valueOf(
+                deviceList.get(position).getPressure()
+        ) + "hPa";
+        viewHolder.getTextDeviceReceivedPressure().setText(string_pres);
+        String string_ch4 = deviceList.get(position).getCh4() + "ppm";
+        viewHolder.getTextDeviceReceivedCH4().setText(string_ch4);
+        String string_co = deviceList.get(position).getCo() + "ppm";
+        viewHolder.getTextDeviceReceivedCO().setText(string_co);
+
     }
 
     /**

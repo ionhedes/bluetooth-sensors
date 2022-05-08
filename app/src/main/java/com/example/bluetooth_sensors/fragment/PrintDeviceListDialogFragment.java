@@ -1,4 +1,4 @@
-package com.example.bluetooth_sensors;
+package com.example.bluetooth_sensors.fragment;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -8,6 +8,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+
+import com.example.bluetooth_sensors.R;
 
 public class PrintDeviceListDialogFragment extends DialogFragment {
 
@@ -29,7 +31,7 @@ public class PrintDeviceListDialogFragment extends DialogFragment {
      * I override this so I can set the host of the dialog using the listener field
      */
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         // Verify that the host activity implements the callback interface
         try {
